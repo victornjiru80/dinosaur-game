@@ -1,0 +1,220 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Page Title</title>
+    </head>
+    <body>
+        <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu du Dinosaure avec Effets Sonores et Score Temps</title>
+    <style>
+        body {
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        canvas {
+            border: 1px solid #000;
+            background-color: #fff;
+        }
+
+        #gameOver {
+            display: none;
+            font-size: 30px;
+            color: #000;
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* Making the game responsive on mobile */
+        @media (max-width: 768px) {
+            canvas {
+                width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="800" height="200"></canvas>
+<div id="gameOver">Game Over! Press Space to Restart</div>
+<div id="score">Score: 0</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+    const gameOverText = document.getElementById('gameOver');
+
+    const dino = {
+        x: 50,
+        y: 150,
+        width: 20,
+        height: 20,
+        speed: 4,
+        jumpHeight: -10,
+        velocity: 0,
+        gravity: 0.5,
+        isJumping: false
+    };
+
+    const cactus = {
+        x: 800,
+        y: 150,
+        width: 20,
+        height: 20,
+        speed: 3
+    };
+
+    let score = 0;
+    let timeElapsed = 0; // Variable for elapsed time
+    let isGameOver = false;
+
+    // Load sound effects
+    const jumpSound = new Audio('https://www.soundjay.com/button/beep-07.wav'); // Sound of jumping
+    const crashSound = new Audio('https://www.soundjay.com/button/beep-09.wav'); // Sound of collision
+    const gameOverSound = new Audio('https://www.soundjay.com/button/beep-05.wav'); //End of game sound
+
+    // Function to draw the dinosaur
+    function drawDino() {
+        ctx.fillStyle = '#333';
+        ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
+    }
+
+    // Function that draws the cactus
+    function drawCactus() {
+        ctx.fillStyle = '#666';
+        ctx.fillRect(cactus.x, cactus.y, cactus.width, cactus.height);
+    }
+
+    // Update score on screen
+    function updateScore() {
+        scoreDisplay.textContent = `Score: ${score}`;
+    }
+
+    // Show end of game
+    function gameOver() {
+        gameOverSound.play();  // End of game sound
+        gameOverText.style.display = 'block';
+        isGameOver = true;
+    }
+
+    //Increase speed of obstacles over time
+    function increaseDifficulty() {
+        if (timeElapsed % 5 === 0 && timeElapsed > 0) { // Increase speed every 5 seconds
+            cactus.speed += 0.1;
+        }
+    }
+
+    // Update game state
+    function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (!isGameOver) {
+            // The score increases over time
+            timeElapsed += 1 / 60; //Increment time every frame (60 FPS)
+            score = Math.floor(timeElapsed); // Round the score to the nearest whole number
+            updateScore(); // Update score display
+            if (dino.isJumping) {
+                dino.velocity += dino.gravity;
+                dino.y += dino.velocity;
+
+                if (dino.y >= 150) {
+                    dino.y = 150;
+                    dino.isJumping = false;
+                    dino.velocity = 0;
+                }
+            }
+
+            cactus.x -= cactus.speed;
+
+            if (cactus.x < 0) {
+                cactus.x = canvas.width;
+            }
+
+            // Check collision
+            if (dino.x + dino.width > cactus.x && dino.x < cactus.x + cactus.width &&
+                dino.y + dino.height > cactus.y) {
+                crashSound.play();  //from collision
+                gameOver();
+            }
+
+            drawDino();
+            drawCactus();
+            increaseDifficulty(); // Increase difficulty over time
+            requestAnimationFrame(update);
+        }
+    }
+
+    // Control the dinosaur jump via spacebar or tap on mobile
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !dino.isJumping && !isGameOver) {
+            dino.isJumping = true;
+            dino.velocity = dino.jumpHeight;
+            jumpSound.play();  // Sound of jumping
+        }
+
+        if (e.code === 'Space' && isGameOver) {
+            // Restart the game
+            isGameOver = false;
+            dino.y = 150;
+            cactus.x = 800;
+            score = 0;
+            timeElapsed = 0;
+            updateScore();
+            gameOverText.style.display = 'none';
+            update();
+        }
+    });
+
+    // For mobile control (tap to jump)
+    window.addEventListener('touchstart', (e) => {
+        if (!dino.isJumping && !isGameOver) {
+            dino.isJumping = true;
+            dino.velocity = dino.jumpHeight;
+            jumpSound.play();  // Sound of jumping
+        }
+
+        if (isGameOver) {
+            //Restart the game on mobile
+            isGameOver = false;
+            dino.y = 150;
+            cactus.x = 800;
+            score = 0;
+            timeElapsed = 0;
+            updateScore();
+            gameOverText.style.display = 'none';
+            update();
+        }
+    });
+
+    
+    update();
+</script>
+
+</body>
+</html>
+    </body>
+</html>
